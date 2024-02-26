@@ -1,0 +1,36 @@
+$vm1_name = "jenkins-master-01"
+$vm1_ip = "192.168.56.20"
+$vm2_name = "jenkins-agent-01"
+$vm2_ip = "192.168.56.25"
+$box = "centos7"
+$ssh_public_key_path = "~/.ssh/id_rsa.pub"
+
+Vagrant.configure("2") do |config|
+  config.vm.define $vm1_name do |config|
+    config.vm.provider "virtualbox" do |vb|
+      vb.cpus = "2"
+      vb.memory = "4096"
+    end
+    config.vm.box = $box
+    config.vm.hostname = $vm1_name
+    config.vm.network "private_network", ip: $vm1_ip
+    config.vm.provision 'file', 
+        source: $ssh_public_key_path, 
+        destination: '~/.ssh/authorized_keys'
+  end
+end
+
+Vagrant.configure("2") do |config|
+    config.vm.define $vm2_name do |config|
+      config.vm.provider "virtualbox" do |vb|
+        vb.cpus = "2"
+        vb.memory = "4096"
+      end
+      config.vm.box = $box
+      config.vm.hostname = $vm2_name
+      config.vm.network "private_network", ip: $vm2_ip
+      config.vm.provision 'file', 
+      source: $ssh_public_key_path, 
+      destination: '~/.ssh/authorized_keys'
+    end
+  end

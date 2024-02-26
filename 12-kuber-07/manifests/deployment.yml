@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment-1
+  labels:
+    app: app-1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app-1
+  template:
+    metadata:
+      labels:
+        app: app-1
+    spec:
+      containers:
+
+      - name: busybox
+        image: busybox
+        command: ['sh', '-c', "while true; do echo \"$(date +'%T %F')\" >> /output/output.txt; sleep 5; done"]
+        volumeMounts:
+        - name: volume-1
+          mountPath: /output
+
+      - name: multitool
+        image: wbitt/network-multitool:latest
+        ports:
+        - containerPort: 80
+        env:
+        - name: HTTP_PORT
+          value: "80"
+        volumeMounts:
+        - name: volume-1
+          mountPath: /input
+
+      volumes:
+      - name: volume-1
+        persistentVolumeClaim:
+          claimName: pvc-1

@@ -1,0 +1,96 @@
+---
+- name: Ping
+  tags: [ping]
+  hosts:
+    - clickhouse
+    - vector
+  tasks:
+    - ping:
+
+- name: Install Clickhouse
+  hosts: clickhouse
+  tags: [clickhouse]
+  handlers:
+    - name: Start clickhouse service
+      become: true
+      ansible.builtin.service:
+        name: clickhouse-server
+        state: restarted
+  tasks:
+    - block:
+        - name: Get clickhouse distrib
+          ansible.builtin.get_url:
+            url: "https://packages.clickhouse.com/rpm/stable/{{ item }}-{{ clickhouse_version }}.noarch.rpm"
+            dest: "./{{ item }}-{{ clickhouse_version }}.rpm"
+          with_items: "{{ clickhouse_packages }}"
+      rescue:
+        - name: Get clickhouse distrib
+          ansible.builtin.get_url:
+            url: "https://packages.clickhouse.com/rpm/stable/clickhouse-common-static-{{ clickhouse_version }}.x86_64.rpm"
+            dest: "./clickhouse-common-static-{{ clickhouse_version }}.rpm"
+    - name: Install clickhouse packages
+      become: true
+      ansible.builtin.yum:
+        name:
+          - clickhouse-common-static-{{ clickhouse_version }}.rpm
+          - clickhouse-client-{{ clickhouse_version }}.rpm
+          - clickhouse-server-{{ clickhouse_version }}.rpm
+      notify: Start clickhouse service
+    - name: Enable remote connections to clickhouse server
+      become: true
+      ansible.builtin.lineinfile:
+        path: /etc/clickhouse-server/config.xml
+        regexp: <!-- <listen_host>::</listen_host> -->
+        line: <listen_host>::</listen_host>
+    - name: Flush handlers
+      meta: flush_handlers
+    - name: Create database
+      ansible.builtin.command: "clickhouse-client -q 'create database {{ clickhouse_database_name }};'"
+      register: create_db
+      failed_when: create_db.rc != 0 and create_db.rc !=82
+      changed_when: create_db.rc == 0
+    - name: Create table
+      tags: clickhouse_db
+      ansible.builtin.command:
+        "clickhouse-client -q 'create table {{ clickhouse_database_name }}.{{ clickhouse_create_table_name }}
+        (appname String, facility String, hostname String, message String, msgid String, procid UInt16, severity String, timestamp DateTime64, version UInt8) Engine=Log;'"
+      register: create_table
+      failed_when: create_table.rc != 0 and create_table.rc !=57
+      changed_when: create_table.rc == 0
+- name: Install Vector manual
+  tags: [vector]
+  hosts: vector
+  handlers:
+    - name: Start Vector service
+      become: true
+      ansible.builtin.service:
+        name: vector
+        state: restarted
+  tasks:
+    - block:
+        - name: Get vector distrib
+          ansible.builtin.get_url:
+            url: "https://packages.timber.io/vector/latest/vector-{{ vector_version }}.{{ ansible_architecture }}.rpm"
+            dest: "./vector-{{ vector_version }}.{{ ansible_architecture }}.rpm"
+        - name: Install vector package
+          become: true
+          ansible.builtin.yum:
+            name:
+              - "./vector-{{ vector_version }}.{{ ansible_architecture }}.rpm"
+        - name: Redefine vector config name
+          become: true
+          tags: vector_config
+          ansible.builtin.lineinfile:
+            path: /etc/default/vector
+            regexp: "VECTOR_CONFIG="
+            line: VECTOR_CONFIG=/etc/vector/config.yaml
+        - name: Create vector config
+          become: true
+          tags: vector_config
+          ansible.builtin.copy:
+            dest: /etc/vector/config.yaml
+            content: |
+              {{ vector_config | to_nice_yaml(indent=2) }}
+        - name: Flush handlers
+          meta: flush_handlers
+      notify: Start Vector service

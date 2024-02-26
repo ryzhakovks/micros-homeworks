@@ -1,0 +1,28 @@
+---
+- name: Ping
+  tags: [ping]
+  hosts:
+    - clickhouse
+    - vector
+    - lighthouse
+  tasks:
+    - ping:
+
+- hosts: clickhouse
+  tags: [clickhouse]
+  roles:
+    - clickhouse
+  post_tasks:
+    - name: Create database and table
+      tags: clickhouse_db
+      import_tasks: tasks/post_task_clickhouse.yml  
+
+- hosts: vector
+  tags: [vector]
+  roles:
+    - vector-role
+
+- hosts: lighthouse
+  tags: [lighthouse]
+  roles:
+    - lighthouse-role

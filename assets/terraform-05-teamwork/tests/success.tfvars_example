@@ -1,0 +1,9 @@
+
+ip_address        = "192.168.0.1"
+ip_address_IPv4   = "192.168.0.1"
+ip_addresses      = ["192.168.0.1", "1.1.1.1", "127.0.0.1"]
+lower_case_string = "lower_case_string"
+in_the_end_there_can_be_only_one = {
+  Dunkan = true
+  Connor = false
+}

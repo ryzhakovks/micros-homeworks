@@ -1,0 +1,13 @@
+[masters]
+
+%{~ for i in masters ~}
+${i["name"]}   ansible_host=${i["network_interface"][0]["nat_ip_address"]}
+
+%{~ endfor ~}
+
+[workers]
+
+%{~ for i in workers ~}
+${i["name"]}   ansible_host=${i["network_interface"][0]["nat_ip_address"]}
+
+%{~ endfor ~}

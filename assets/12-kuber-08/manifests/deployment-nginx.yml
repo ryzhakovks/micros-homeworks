@@ -1,0 +1,48 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment-nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx-app
+  template:
+    metadata:
+      labels:
+        app: nginx-app
+    spec:
+      containers:
+        - name: nginx-app
+          image: nginx:1.25.3
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "100Mi"
+            limits:
+              cpu: "150m"
+              memory: "200Mi"
+          ports:
+            - name: http
+              containerPort: 80
+          volumeMounts:
+            - name: nginx-volume
+              mountPath: usr/share/nginx/html/index.html
+              subPath: index.html
+      volumes:
+        - name: nginx-volume
+          configMap:
+            name: nginx-configmap
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-svc
+spec:
+  selector:
+    app: nginx-app
+  ports:
+    - name: nginx-https
+      port: 443
+      targetPort: http

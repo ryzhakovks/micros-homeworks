@@ -1,0 +1,36 @@
+apiVersion : apps/v1
+kind: Deployment
+metadata:
+  name: empty-dir-example
+  labels:
+    app: app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app
+  template:
+    metadata:
+      labels:
+        app: app
+    spec:
+      containers:
+        - name: busybox
+          image: busybox
+          command: ["/bin/sh"]
+          args: ["-c", "while true; do echo \"$(date +'%T %F')\" >> /logs/app.log ; sleep 5; done"]
+          volumeMounts:
+          - mountPath: /logs
+            name: log-volume
+        - name: multitool
+          image: wbitt/network-multitool
+          volumeMounts:
+          - mountPath: /logs
+            name: log-volume
+          env:
+            - name: HTTP_PORT
+              value: "8080"
+      volumes:
+      - name: log-volume
+        emptyDir:
+          sizeLimit: 500Mi

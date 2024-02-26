@@ -1,0 +1,37 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: multitool-{{ include "mychart.fullname" . }}
+  name: deployment-2-{{ include "mychart.fullname" . }}
+spec:
+  selector:
+    matchLabels:
+      app: multitool-{{ include "mychart.fullname" . }}
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: multitool-{{ include "mychart.fullname" . }}
+    spec:
+      containers:
+        - name: multitool-{{ include "mychart.fullname" . }}
+          image: wbitt/network-multitool:{{ .Values.deployment2.imageVersion }}
+          env:
+            - name: HTTP_PORT
+              value: "{{ .Values.deployment2.httpPort }}"
+            - name: HTTPS_PORT
+              value: "{{ .Values.deployment2.httpsPort }}"
+          ports:
+            - containerPort: {{ .Values.deployment2.httpPort }}
+              name: http-port
+            - containerPort: {{ .Values.deployment2.httpsPort }}
+              name: https-port
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "100Mi"
+            limits:
+              cpu: "{{ .Values.deployment2.limits.cpu }}"
+              memory: "{{ .Values.deployment2.limits.memory }}"

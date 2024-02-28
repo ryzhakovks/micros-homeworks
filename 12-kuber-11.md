@@ -1,4 +1,4 @@
-# Домашнее задание к занятию "Troubleshooting" dev-17_kuber-homeworks-3.5-yakovlev_vs
+# Домашнее задание к занятию "Troubleshooting"
 "Troubleshooting"
 
 ### Цель задания
